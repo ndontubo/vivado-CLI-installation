@@ -1,2 +1,0 @@
-[console_scripts]
-vivado-mac = vivado_mac.cli:main

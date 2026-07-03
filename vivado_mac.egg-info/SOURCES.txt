@@ -1,9 +1,0 @@
-pyproject.toml
-vivado_mac/cli.py
-vivado_mac/doctor.py
-vivado_mac/init.py
-vivado_mac.egg-info/PKG-INFO
-vivado_mac.egg-info/SOURCES.txt
-vivado_mac.egg-info/dependency_links.txt
-vivado_mac.egg-info/entry_points.txt
-vivado_mac.egg-info/top_level.txt

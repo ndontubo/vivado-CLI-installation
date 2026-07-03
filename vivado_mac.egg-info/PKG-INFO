@@ -1,0 +1,5 @@
+Metadata-Version: 2.4
+Name: vivado-mac
+Version: 0.1.0
+Summary: trying to automate the entire process of running AMD vivado on apple silicon macs via rosetta-accelerated Linux VM
+Requires-Python: >=3.9

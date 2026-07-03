@@ -1,0 +1,13 @@
+[project]
+name = "vivado-mac"
+version = "0.1.0"
+description = "trying to automate the entire process of running AMD vivado on apple silicon macs via rosetta-accelerated Linux VM"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+vivado-mac = "vivado_mac.cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"

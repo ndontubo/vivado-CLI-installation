@@ -178,30 +178,70 @@ def check_disk_space(pairing: str, storage_path: Optional[str]) -> CheckResult:
 
 
 def check_qemu(auto_fix: bool) -> CheckResult:
-    # checks for qemu-system-aarch64 on $PATH. If missing, tells you the brew install qemu command, or runs it for you if you pass --fix.
-    if shutil.which("qemu-system-aarch64"):
-        rc, out = _run(["qemu-system-aarch64", "--version"])
+    # checks for qemu-img on $PATH. NOTE (Phase 1 correction -- see vm.py's
+    # module docstring and ARCHITECTURE.md): qemu is no longer the VM
+    # *launcher* -- vfkit is (see check_vfkit below), because Rosetta-for-
+    # Linux's virtiofs share is a Virtualization.framework-only API that
+    # plain qemu-system-aarch64 can't reach. qemu is kept as a Phase 0/1
+    # prerequisite anyway because qemu-img is used offline to convert the
+    # official Ubuntu/Debian qcow2 cloud images to raw (vfkit can't read
+    # qcow2 directly -- Apple Virtualization Framework has no qcow2 support).
+    if shutil.which("qemu-img"):
+        rc, out = _run(["qemu-img", "--version"])
         version = out.splitlines()[0] if out else "unknown version"
-        return CheckResult("QEMU", "pass", f"Found qemu-system-aarch64 ({version}).")
+        return CheckResult("QEMU (qemu-img)", "pass", f"Found qemu-img ({version}).")
 
     if not shutil.which("brew"):
         return CheckResult(
-            "QEMU", "fail",
-            "qemu-system-aarch64 not found, and Homebrew is not installed either. "
+            "QEMU (qemu-img)", "fail",
+            "qemu-img not found, and Homebrew is not installed either. "
             "Install Homebrew (https://brew.sh) then run: brew install qemu",
         )
 
     if auto_fix:
-        print("  -> qemu-system-aarch64 not found. Running: brew install qemu")
+        print("  -> qemu-img not found. Running: brew install qemu")
         rc = _run_streaming(["brew", "install", "qemu"])
-        if rc == 0 and shutil.which("qemu-system-aarch64"):
-            return CheckResult("QEMU", "pass", "Installed qemu via Homebrew.")
-        return CheckResult("QEMU", "fail", "brew install qemu did not succeed. Try running it manually.")
+        if rc == 0 and shutil.which("qemu-img"):
+            return CheckResult("QEMU (qemu-img)", "pass", "Installed qemu via Homebrew.")
+        return CheckResult("QEMU (qemu-img)", "fail", "brew install qemu did not succeed. Try running it manually.")
 
     return CheckResult(
-        "QEMU", "fail",
-        "qemu-system-aarch64 not found. Install it with: brew install qemu "
-        "(or re-run doctor with --fix to install it automatically).",
+        "QEMU (qemu-img)", "fail",
+        "qemu-img not found. Install it with: brew install qemu "
+        "(or re-run doctor with --fix to install it automatically). Needed "
+        "to convert cloud images from qcow2 to raw for `vivado-mac init`.",
+    )
+
+
+def check_vfkit(auto_fix: bool) -> CheckResult:
+    # vfkit (github.com/crc-org/vfkit, Apache-2.0) is the actual VM
+    # launcher used by `init`/`start`/`stop`/`status`/`destroy` -- a small
+    # CLI hypervisor built directly on Virtualization.framework, which is
+    # what makes real Rosetta-for-Linux support possible (see vm.py).
+    if shutil.which("vfkit"):
+        rc, out = _run(["vfkit", "--version"])
+        version = out.splitlines()[0] if out else "unknown version"
+        return CheckResult("vfkit", "pass", f"Found vfkit ({version}).")
+
+    if not shutil.which("brew"):
+        return CheckResult(
+            "vfkit", "fail",
+            "vfkit not found, and Homebrew is not installed either. "
+            "Install Homebrew (https://brew.sh) then run: brew install vfkit",
+        )
+
+    if auto_fix:
+        print("  -> vfkit not found. Running: brew install vfkit")
+        rc = _run_streaming(["brew", "install", "vfkit"])
+        if rc == 0 and shutil.which("vfkit"):
+            return CheckResult("vfkit", "pass", "Installed vfkit via Homebrew.")
+        return CheckResult("vfkit", "fail", "brew install vfkit did not succeed. Try running it manually.")
+
+    return CheckResult(
+        "vfkit", "fail",
+        "vfkit not found. Install it with: brew install vfkit "
+        "(or re-run doctor with --fix to install it automatically). This is "
+        "the VM launcher `vivado-mac init`/`start` will shell out to.",
     )
 
 
@@ -233,6 +273,7 @@ def run_doctor(pairing: str, storage_path: Optional[str], auto_fix: bool, assume
         check_ram(),
         check_disk_space(pairing, storage_path),
         check_qemu(auto_fix),
+        check_vfkit(auto_fix),
         check_rosetta(auto_fix),
     ]
 

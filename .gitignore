@@ -49,3 +49,8 @@ id_ed25519*
 .vscode/
 .idea/
 *.swp
+# --- Phase 1 additions: vfkit uses raw disk images, not qcow2 ---
+# (Apple Virtualization Framework has no qcow2 support -- see
+# ARCHITECTURE.md's "Disk footprint & storage strategy" section)
+*.raw
+*.fd
